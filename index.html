@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>RM-NETWORK MASTER | Pusat Kendali</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        :root { --master: #ffcc00; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --danger: #ef4444; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 10px; display: flex; justify-content: center; margin: 0; }
+        #loginGate { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .gate-box { width: 100%; max-width: 350px; background: var(--card); padding: 30px; border-radius: 20px; border: 1px solid #334155; text-align: center; }
+        .container { max-width: 550px; width: 100%; background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); box-sizing: border-box; display: none; }
+        .header { text-align: center; border-bottom: 2px solid var(--master); margin-bottom: 15px; padding-bottom: 10px; }
+        label { font-size: 11px; color: #94a3b8; text-transform: uppercase; margin-top: 15px; display: block; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 10px; box-sizing: border-box; outline: none; font-size: 13px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .omset-box { background: rgba(255, 204, 0, 0.05); border: 1px solid rgba(255, 204, 0, 0.3); padding: 10px; border-radius: 12px; margin-top: 10px; text-align: center; }
+        .omset-box h3 { margin: 0; color: var(--master); font-size: 18px; }
+        button#btnGen, .btn-login { width: 100%; padding: 15px; background: var(--master); color: #000; border: none; border-radius: 12px; font-weight: bold; margin-top: 20px; cursor: pointer; text-transform: uppercase; }
+        .output-box { background: #000; padding: 15px; border-radius: 15px; margin-top: 20px; border-left: 4px solid var(--master); position: relative; }
+        textarea.script-area { height: 100px; color: #00ffcc; font-family: monospace; font-size: 11px; margin-bottom: 10px; border: none; background: transparent; }
+        .btn-close { position: absolute; right: 10px; top: 10px; color: #94a3b8; cursor: pointer; font-size: 18px; font-weight: bold; }
+        .btn-renew { width: 100%; padding: 10px; background: #22c55e; color: #fff; border: none; border-radius: 8px; font-weight: bold; margin-top: 5px; cursor: pointer; }
+        .table-container { overflow-x: auto; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { background: #334155; color: var(--master); padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #334155; }
+        .mitra-name { color: var(--master); cursor: pointer; text-decoration: underline; font-weight: bold; }
+        .brand-footer { text-align: center; margin-top: 25px; font-size: 11px; color: var(--master); opacity: 0.7; border-top: 1px solid #334155; padding-top: 15px; }
+        .btn-exit { background: none; border: none; color: var(--danger); font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 15px; width: 100%; text-decoration: underline; }
+        .btn-change-pass { background: none; border: none; color: #94a3b8; font-size: 10px; cursor: pointer; margin-top: 10px; }
+    </style>
+</head>
+<body onload="cekAkses()">
+
+<div id="loginGate">
+    <div class="gate-box" id="gateBox">
+        <h2 style="color:var(--master); margin-bottom:20px;">MASTER LOGIN</h2>
+        <input type="password" id="masterPass" placeholder="Password Master" style="text-align:center;">
+        <button class="btn-login" onclick="validasiMasuk()">MASUK</button>
+        <button class="btn-change-pass" onclick="tampilGantiPass()">Ganti Password Master?</button>
+    </div>
+    <div class="gate-box" id="changePassBox" style="display:none;">
+        <h2 style="color:var(--master); margin-bottom:20px;">GANTI PASSWORD</h2>
+        <input type="password" id="oldPass" placeholder="Password Lama" style="text-align:center; margin-bottom:5px;">
+        <input type="password" id="newPass" placeholder="Password Baru" style="text-align:center;">
+        <button class="btn-login" onclick="prosesGantiPass()">SIMPAN PASSWORD</button>
+        <button class="btn-change-pass" onclick="kembaliLogin()">Kembali</button>
+    </div>
+</div>
+
+<div class="container" id="mainApp">
+    <div class="header"><h2>RM-NETWORK MASTER</h2><small>SSTP VPN MANAGEMENT</small></div>
+    <div class="omset-box"><small>TOTAL OMSET MASUK</small><h3 id="totalOmset">Rp 0</h3></div>
+    
+    <label>IP Server Singapore & Akses Admin</label>
+    <input type="text" id="ipMaster" value="41.216.190.85">
+    <div class="grid">
+        <input type="text" id="userMikrotik" placeholder="User MikroTik" onchange="saveAdminConfig()">
+        <input type="password" id="passMikrotik" placeholder="Pass MikroTik" onchange="saveAdminConfig()">
+    </div>
+
+    <div class="grid">
+        <div><label>Bot Token Telegram</label><input type="text" id="botToken" onchange="saveTelegramConfig()"></div>
+        <div><label>Chat ID Telegram</label><input type="text" id="chatId" onchange="saveTelegramConfig()"></div>
+    </div>
+
+    <hr style="border: 0.5px solid #334155; margin: 25px 0;">
+
+    <label>Detail Mitra Baru</label>
+    <input type="text" id="custName" placeholder="Nama / ID Mitra">
+    <div class="grid">
+        <div><label>Profil VPN</label><select id="custProfile"><option value="Default">Default</option><option value="1Mbps">1Mbps</option></select></div>
+        <div><label>Jatah Port (Otomatis)</label><input type="text" id="portRange" readonly style="color: var(--master);"></div>
+    </div>
+    <div class="grid">
+        <div><label>Harga (Rp)</label><input type="number" id="mPrice" value="100000"></div>
+        <div><label>Durasi (Hari)</label><input type="number" id="mDays" value="30"></div>
+    </div>
+
+    <button id="btnGen" onclick="prosesKeMikrotik()">DAFTARKAN MITRA</button>
+    
+    <div id="resultBox" class="output-box" style="display:none;">
+        <span class="btn-close" onclick="tutupPanel()">×</span>
+        <label id="scriptLabel" style="color:var(--master)">1. SCRIPT CLIENT (VPN + AUTO-REMOT):</label>
+        <textarea id="scriptClient" class="script-area" readonly></textarea>
+        <label style="color:var(--master)">2. SCRIPT SCHEDULER (PASANG DI MIKROTIK BAPAK):</label>
+        <textarea id="scriptSched" class="script-area" readonly></textarea>
+        <button id="btnPerpanjang" class="btn-renew" style="display:none;" onclick="perpanjangKontrak()">PERPANJANG KONTRAK MITRA INI</button>
+        <textarea id="logOutput" style="height:40px; color:#fff; background:transparent; border:none;" readonly></textarea>
+    </div>
+
+    <div class="table-container">
+        <table><thead><tr><th>Mitra</th><th>Port</th><th>Sewa</th><th>Sisa</th></tr></thead><tbody id="listMitra"></tbody></table>
+    </div>
+    <div class="brand-footer">RM-NETWORK GROUP &copy; 2026</div>
+    <button class="btn-exit" onclick="keluarAplikasi()">Keluar Aplikasi</button>
+</div>
+
+<script>
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBaB6YTXqgzIuKdt7S6hBqAJoqdPirSbrE", authDomain: "rm-monitoring-9fa41.firebaseapp.com", 
+        databaseURL: "https://rm-monitoring-9fa41-default-rtdb.asia-southeast1.firebasedatabase.app", 
+        projectId: "rm-monitoring-9fa41", storageBucket: "rm-monitoring-9fa41.firebasestorage.app", 
+        messagingSenderId: "76073790244", appId: "1:76073790244:web:e8b3cbe7cbf8c60b73a1b1" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const API_BRIDGE = "http://76.13.19.122:3000";
+
+    function getMasterPass() { return localStorage.getItem('master_pwd_rm') || 'admin123'; }
+    function setMasterPass(pwd) { localStorage.setItem('master_pwd_rm', pwd); }
+
+    function validasiMasuk() {
+        if(document.getElementById('masterPass').value === getMasterPass()) {
+            sessionStorage.setItem('master_auth', 'true'); cekAkses();
+        } else alert("Password Salah!");
+    }
+
+    function tampilGantiPass() { document.getElementById('gateBox').style.display='none'; document.getElementById('changePassBox').style.display='block'; }
+    function kembaliLogin() { document.getElementById('gateBox').style.display='block'; document.getElementById('changePassBox').style.display='none'; }
+    function prosesGantiPass() {
+        const o = document.getElementById('oldPass').value; const n = document.getElementById('newPass').value;
+        if(o === getMasterPass()) { setMasterPass(n); alert("Ganti Berhasil!"); kembaliLogin(); } else alert("Sandi Lama Salah!");
+    }
+
+    function cekAkses() {
+        if(sessionStorage.getItem('master_auth') === 'true') {
+            document.getElementById('loginGate').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            muatDataMaster(); loadTelegramConfig(); loadAdminConfig();
+        }
+    }
+
+    function saveAdminConfig() {
+        const conf = { u: document.getElementById('userMikrotik').value, p: document.getElementById('passMikrotik').value };
+        localStorage.setItem('rm_admin_access', JSON.stringify(conf));
+    }
+    function loadAdminConfig() {
+        const s = localStorage.getItem('rm_admin_access');
+        if(s) { const c = JSON.parse(s); document.getElementById('userMikrotik').value = c.u; document.getElementById('passMikrotik').value = c.p; }
+    }
+
+    function saveTelegramConfig() { localStorage.setItem('rm_tele', JSON.stringify({t: document.getElementById('botToken').value, i: document.getElementById('chatId').value})); }
+    function loadTelegramConfig() { const s = localStorage.getItem('rm_tele'); if(s) { const c = JSON.parse(s); document.getElementById('botToken').value = c.t; document.getElementById('chatId').value = c.i; }}
+
+    function tutupPanel() { document.getElementById('resultBox').style.display = 'none'; }
+    function keluarAplikasi() { sessionStorage.removeItem('master_auth'); location.reload(); }
+
+    async function muatDataMaster() {
+        db.ref('mitra_config').on('value', (snapshot) => {
+            let listHtml = ""; let total = 0; let lastPortEnd = 4999; const now = new Date();
+            snapshot.forEach((child) => {
+                const d = child.val(); const exp = new Date(d.jatuh_tempo); const diff = Math.ceil((exp - now) / 86400000);
+                total += parseInt(d.nominal || 0); if(d.port) lastPortEnd = Math.max(lastPortEnd, parseInt(d.port.split('-')[1]));
+                listHtml += `<tr><td><span class="mitra-name" onclick="tampilkanUlangScript('${child.key}')">${child.key}</span></td><td>${d.port}</td><td>Rp ${parseInt(d.nominal).toLocaleString()}</td><td>${diff} Hari</td></tr>`;
+            });
+            document.getElementById('totalOmset').innerText = "Rp " + total.toLocaleString();
+            document.getElementById('listMitra').innerHTML = listHtml;
+            document.getElementById('portRange').value = (lastPortEnd + 1) + "-" + (lastPortEnd + 100);
+        });
+    }
+
+    function tampilkanUlangScript(name) {
+        db.ref('mitra_config/' + name).once('value', (s) => {
+            if(s.exists()){
+                const d = s.val(); const portU = d.port.split('-')[0];
+                document.getElementById('resultBox').style.display = "block";
+                document.getElementById('btnPerpanjang').style.display = "block";
+                document.getElementById('custName').value = name;
+                document.getElementById('scriptLabel').innerText = "TAMPIL ULANG: " + name;
+                document.getElementById('scriptClient').value = `/interface sstp-client add name="RM-VPN-${name}" connect-to="41.216.190.85" user="${name}" password="${d.password}" profile=default-encryption disabled=no; /ip firewall nat add action=redirect chain=dstnat dst-port=${portU} protocol=tcp to-ports=8291 comment="REMOT-MIKROTIK-SELF"`;
+                document.getElementById('scriptSched').value = "Scheduler sudah terpasang di Mikrotik Singapore.";
+            }
+        });
+    }
+
+    async function perpanjangKontrak() {
+        const n = document.getElementById('custName').value; const d = parseInt(document.getElementById('mDays').value);
+        db.ref('mitra_config/' + n).once('value', (s) => {
+            if(s.exists()){
+                let exp = new Date(s.val().jatuh_tempo); exp.setDate(exp.getDate() + d);
+                db.ref('mitra_config/' + n).update({ jatuh_tempo: exp.toISOString() }); alert("Sukses!");
+            }
+        });
+    }
+
+    async function prosesKeMikrotik() {
+        const n = document.getElementById('custName').value; const ipM = document.getElementById('ipMaster').value; if(!n) return alert("Nama!");
+        const passM = "RM-" + Math.floor(1000 + Math.random() * 9000); const d = document.getElementById('mDays').value;
+        const exp = new Date(); exp.setDate(exp.getDate() + parseInt(d)); const prt = document.getElementById('portRange').value; const portU = prt.split('-')[0];
+        document.getElementById('resultBox').style.display = "block"; document.getElementById('btnPerpanjang').style.display = "none";
+        document.getElementById('scriptClient').value = `/interface sstp-client add name="RM-VPN-${n}" connect-to="${ipM}" user="${n}" password="${passM}" profile=default-encryption disabled=no; /ip firewall nat add action=redirect chain=dstnat dst-port=${portU} protocol=tcp to-ports=8291 comment="REMOT-MIKROTIK-SELF"`;
+        document.getElementById('scriptSched').value = `/system scheduler add name="EXP-${n}" interval=${d}d on-event="/interface sstp-client disable [find name=\\"RM-VPN-${n}\\"]"`;
+        await db.ref('mitra_config/' + n).set({ password: passM, port: prt, nominal: document.getElementById('mPrice').value, jatuh_tempo: exp.toISOString(), status: "Aktif" });
+        document.getElementById('custName').value = "";
+        try {
+            const r = await fetch(API_BRIDGE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ip_master: ipM, user_mikrotik: document.getElementById('userMikrotik').value, pass_mikrotik: document.getElementById('passMikrotik').value, username: n, password: passM, profile: document.getElementById('custProfile').value }) });
+            const h = await r.json(); document.getElementById('logOutput').value = h.message;
+        } catch (e) { document.getElementById('logOutput').value = "Timeout 10s"; }
+    }
+</script>
+</body>
+</html>

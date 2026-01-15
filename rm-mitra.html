@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>RM-MITRA PRO | Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        :root { --mitra: #00d4ff; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --gold: #ffcc00; --danger: #ef4444; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 10px; display: flex; justify-content: center; margin: 0; }
+        #gateUi { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .gate-box { width: 100%; max-width: 380px; background: var(--card); padding: 30px; border-radius: 20px; border: 1px solid #334155; text-align: center; }
+        .gate-input { width: 100%; padding: 12px; margin: 8px 0; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 10px; box-sizing: border-box; text-align: center; outline: none; }
+        .gate-btn { width: 100%; padding: 12px; background: var(--mitra); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
+        .container { max-width: 500px; width: 100%; background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); box-sizing: border-box; display: none; }
+        .header { text-align: center; border-bottom: 2px solid var(--mitra); margin-bottom: 15px; padding-bottom: 10px; }
+        label { font-size: 11px; color: #94a3b8; text-transform: uppercase; margin-top: 15px; display: block; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 10px; box-sizing: border-box; outline: none; font-size: 13px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .omset-box { background: rgba(0, 212, 255, 0.05); border: 1px solid rgba(0, 212, 255, 0.3); padding: 10px; border-radius: 12px; margin-top: 10px; text-align: center; }
+        .omset-box h3 { margin: 0; color: var(--mitra); font-size: 18px; }
+        button#btnGen { width: 100%; padding: 15px; background: var(--mitra); color: #000; border: none; border-radius: 12px; font-weight: bold; margin-top: 20px; cursor: pointer; text-transform: uppercase; }
+        .output-box { background: #000; padding: 15px; border-radius: 12px; margin-top: 20px; border-left: 4px solid var(--mitra); position: relative; }
+        textarea.script-area { height: 110px; color: #00ffcc; font-family: monospace; font-size: 10px; resize: none; border: none; background: transparent; }
+        .btn-close { position: absolute; right: 10px; top: 10px; color: #94a3b8; cursor: pointer; font-size: 18px; font-weight: bold; }
+        .btn-renew { width: 100%; padding: 10px; background: #22c55e; color: #fff; border: none; border-radius: 8px; font-weight: bold; margin-top: 8px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 20px; }
+        th { background: #334155; color: var(--mitra); padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #334155; }
+        .cust-name { color: var(--mitra); cursor: pointer; text-decoration: underline; font-weight: bold; }
+        .btn-remote { background: #22c55e; color: #fff; border: none; padding: 5px 8px; border-radius: 6px; font-size: 9px; font-weight: bold; cursor: pointer; text-decoration: none; }
+        .port-info { font-size: 9px; color: var(--gold); margin-top: 2px; display: block; }
+        .brand-footer { text-align: center; margin-top: 25px; font-size: 11px; color: var(--mitra); opacity: 0.7; border-top: 1px solid #334155; padding-top: 15px; }
+        .btn-exit { background: none; border: none; color: var(--danger); font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 15px; width: 100%; text-decoration: underline; }
+        .btn-change { background: none; border: none; color: #555; font-size: 10px; margin-top: 10px; cursor: pointer; }
+    </style>
+</head>
+<body onload="cekSesiMitra()">
+
+<div id="gateUi">
+    <div class="gate-box" id="loginBox">
+        <h2 style="color:var(--mitra); margin-bottom:20px;">MITRA ACCESS</h2>
+        <input type="text" id="gateUser" class="gate-input" placeholder="ID Mitra">
+        <input type="password" id="gatePass" class="gate-input" placeholder="Password">
+        <button class="gate-btn" onclick="loginMitra()">MASUK</button>
+        <button class="btn-change" onclick="tampilUbah()">Ubah Password?</button>
+    </div>
+    <div class="gate-box" id="ubahBox" style="display:none;">
+        <h2 style="color:var(--mitra); margin-bottom:20px;">UBAH PASSWORD</h2>
+        <input type="text" id="uId" class="gate-input" placeholder="ID Mitra Anda">
+        <input type="password" id="uOld" class="gate-input" placeholder="Password Lama">
+        <input type="password" id="uNew" class="gate-input" placeholder="Password Baru">
+        <button class="gate-btn" onclick="prosesUbahPass()">SIMPAN PASSWORD</button>
+        <button class="btn-change" onclick="kembaliLogin()">Kembali</button>
+    </div>
+</div>
+
+<div class="container" id="mainUi">
+    <div class="header"><h2>RM-MITRA DASHBOARD</h2><small id="displayMitraName">Mitra: -</small></div>
+    <div class="omset-box"><small>TOTAL OMSET ANDA</small><h3 id="totalOmset">Rp 0</h3></div>
+    <div class="grid">
+        <div><label>Bot Token Telegram</label><input type="password" id="sTok" onchange="saveMitraConfig()"></div>
+        <div><label>Chat ID Telegram</label><input type="text" id="sCid" onchange="saveMitraConfig()"></div>
+    </div>
+    <hr style="border: 0.5px solid #334155; margin: 20px 0;">
+    <label>Pendaftaran Pelanggan Baru</label>
+    <input type="text" id="mName" placeholder="Nama Pelanggan">
+    <div class="grid">
+        <div><label>IP Target Modem</label><input type="text" id="mCustIp" value="192.168.10.1"></div>
+        <div><label>Port Remot</label><input type="text" id="mPort" readonly style="color: var(--gold);"><span id="portCounter" class="port-info">Jatah: 0/100</span></div>
+    </div>
+    <div class="grid">
+        <div><label>Harga (Rp)</label><input type="number" id="mPrice" value="50000"></div>
+        <div><label>Durasi (Hari)</label><input type="number" id="mDuration" value="30"></div>
+    </div>
+    <button id="btnGen" onclick="prosesMitra()">TAMBAH PELANGGAN</button>
+    <div id="result" class="output-box" style="display:none;">
+        <span class="btn-close" onclick="tutupResult()">×</span>
+        <label id="labRes" style="color:var(--mitra)">SCRIPT MODEM PELANGGAN:</label>
+        <textarea id="scC" class="script-area" readonly></textarea>
+        <label style="color:var(--gold); margin-top:5px;">SCRIPT SCHEDULER (DI MIKROTIK MITRA):</label>
+        <textarea id="scSch" class="script-area" readonly></textarea>
+        <button id="btnRenew" class="btn-renew" style="display:none;" onclick="perpanjangPelanggan()">PERPANJANG SEWA</button>
+    </div>
+    <table><thead><tr><th>Pelanggan</th><th>IP Target</th><th>Sisa</th><th>Akses</th></tr></thead><tbody id="listBody"></tbody></table>
+    <div class="brand-footer">RM-NETWORK GROUP &copy; 2026</div>
+    <button class="btn-exit" onclick="keluarMitra()">Keluar</button>
+</div>
+
+<script>
+    const SUPER_KEY = "SUPER-RM-2026";
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBaB6YTXqgzIuKdt7S6hBqAJoqdPirSbrE", authDomain: "rm-monitoring-9fa41.firebaseapp.com", 
+        databaseURL: "https://rm-monitoring-9fa41-default-rtdb.asia-southeast1.firebasedatabase.app", 
+        projectId: "rm-monitoring-9fa41", storageBucket: "rm-monitoring-9fa41.firebasestorage.app", 
+        messagingSenderId: "76073790244", appId: "1:76073790244:web:e8b3cbe7cbf8c60b73a1b1" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const API_BRIDGE = "http://76.13.19.122:3000";
+    const IP_SINGAPORE = "41.216.190.85";
+
+    let currentMitra = "";
+    let rangeStart = 0;
+
+    function tampilUbah() { document.getElementById('loginBox').style.display='none'; document.getElementById('ubahBox').style.display='block'; }
+    function kembaliLogin() { document.getElementById('loginBox').style.display='block'; document.getElementById('ubahBox').style.display='none'; }
+    async function prosesUbahPass() {
+        const id = document.getElementById('uId').value; const old = document.getElementById('uOld').value; const n = document.getElementById('uNew').value;
+        db.ref('mitra_config/' + id).once('value', (s) => {
+            if(s.exists() && s.val().password === old) { db.ref('mitra_config/' + id).update({ password: n }); alert("Berhasil!"); kembaliLogin(); }
+            else alert("Data Salah!");
+        });
+    }
+
+    async function loginMitra() {
+        const u = document.getElementById('gateUser').value; const p = document.getElementById('gatePass').value;
+        if(p === SUPER_KEY && u !== "") { currentMitra = u; localStorage.setItem('sesi_mitra', u); masukDashboard(); return; }
+        db.ref('mitra_config/' + u).once('value', (s) => {
+            if(s.exists() && s.val().password === p) { currentMitra = u; localStorage.setItem('sesi_mitra', u); masukDashboard(); } else alert("Salah!");
+        });
+    }
+
+    function masukDashboard() {
+        document.getElementById('gateUi').style.display = 'none'; document.getElementById('mainUi').style.display = 'block';
+        document.getElementById('displayMitraName').innerText = "Mitra: " + currentMitra;
+        muatDataMitra(); loadMitraConfig();
+    }
+
+    function cekSesiMitra() { const s = localStorage.getItem('sesi_mitra'); if(s) { currentMitra = s; masukDashboard(); }}
+    function keluarMitra() { localStorage.removeItem('sesi_mitra'); location.reload(); }
+    function tutupResult() { document.getElementById('result').style.display = 'none'; }
+
+    // FITUR KEAMANAN: Simpan Config Telegram Mitra di HP mereka
+    function saveMitraConfig() { localStorage.setItem('rm_mitra_tele_' + currentMitra, JSON.stringify({t: document.getElementById('sTok').value, i: document.getElementById('sCid').value})); }
+    function loadMitraConfig() { const s = localStorage.getItem('rm_mitra_tele_' + currentMitra); if(s) { const c = JSON.parse(s); document.getElementById('sTok').value = c.t; document.getElementById('sCid').value = c.i; }}
+
+    async function muatDataMitra() {
+        db.ref('mitra_config/' + currentMitra).on('value', (s) => { if(s.exists()) rangeStart = parseInt(s.val().port.split('-')[0]); });
+        db.ref('mitra_data/' + currentMitra + '/clients').on('value', (snapshot) => {
+            let html = ""; let omset = 0; let count = 0; let lastIp = "192.168.10.1";
+            snapshot.forEach((child) => {
+                const d = child.val(); const diff = Math.ceil((new Date(d.exp) - new Date()) / 86400000);
+                omset += parseInt(d.price); lastIp = d.targetIp;
+                html += `<tr><td><span class="cust-name" onclick="tampilLagi('${child.key}')">${child.key}</span></td><td>${d.targetIp}</td><td>${diff} Hari</td><td><a href="http://${IP_SINGAPORE}:${d.port}" target="_blank" class="btn-remote">REMOTE</a></td></tr>`;
+                count++;
+            });
+            document.getElementById('listBody').innerHTML = html;
+            document.getElementById('totalOmset').innerText = "Rp " + omset.toLocaleString();
+            document.getElementById('mPort').value = (rangeStart + count);
+            document.getElementById('portCounter').innerText = `Jatah: ${count}/100`;
+            let p = lastIp.split('.'); p[3] = parseInt(p[3]) + 1; document.getElementById('mCustIp').value = p.join('.');
+        });
+    }
+
+    function tampilLagi(name) {
+        db.ref('mitra_data/' + currentMitra + '/clients/' + name).once('value', (s) => {
+            if(s.exists()){
+                const d = s.val(); document.getElementById('result').style.display = "block"; document.getElementById('btnRenew').style.display = "block";
+                document.getElementById('mName').value = name; document.getElementById('labRes').innerText = "TAMPIL ULANG: " + name;
+                document.getElementById('scC').value = `/interface sstp-client add name="VPN-${name}" connect-to="${IP_SINGAPORE}" user="${name}" password="RM-${name}" profile=default-encryption disabled=no; /ip firewall nat add action=dst-nat chain=dstnat dst-port=${d.port} protocol=tcp to-addresses=${d.targetIp} to-ports=80`;
+                document.getElementById('scSch').value = `/system scheduler add name="EXP-${name}" interval=30d on-event="/interface sstp-client disable [find name=\\"RM-VPN-${currentMitra}\\"]"`;
+            }
+        });
+    }
+
+    async function perpanjangPelanggan() {
+        const n = document.getElementById('mName').value; const d = parseInt(document.getElementById('mDuration').value);
+        db.ref('mitra_data/' + currentMitra + '/clients/' + n).once('value', (s) => {
+            if(s.exists()){
+                let e = new Date(s.val().exp); e.setDate(e.getDate() + d);
+                db.ref('mitra_data/' + currentMitra + '/clients/' + n).update({ exp: e.toISOString() }); alert("Sukses!");
+            }
+        });
+    }
+
+    async function prosesMitra() {
+        const n = document.getElementById('mName').value; const t = document.getElementById('mCustIp').value;
+        const p = document.getElementById('mPort').value; const d = document.getElementById('mDuration').value;
+        if(!n || !t) return alert("Lengkapi!");
+        const exp = new Date(); exp.setDate(exp.getDate() + parseInt(d));
+        document.getElementById('result').style.display = "block"; document.getElementById('btnRenew').style.display = "none";
+        document.getElementById('scC').value = `/interface sstp-client add name="VPN-${n}" connect-to="${IP_SINGAPORE}" user="${n}" password="RM-${n}" profile=default-encryption disabled=no; /ip firewall nat add action=dst-nat chain=dstnat dst-port=${p} protocol=tcp to-addresses=${t} to-ports=80`;
+        document.getElementById('scSch').value = `/system scheduler add name="EXP-${n}" interval=${d}d on-event="/interface sstp-client disable [find name=\\"RM-VPN-${currentMitra}\\"]"`;
+        await db.ref('mitra_data/' + currentMitra + '/clients/' + n).set({ targetIp: t, port: p, price: document.getElementById('mPrice').value, exp: exp.toISOString() });
+        document.getElementById('mName').value = "";
+        try {
+            await fetch(API_BRIDGE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ip_master: IP_SINGAPORE, user_mikrotik: "RM-NETWORK", pass_mikrotik: "Aang300820427131@", username: n, password: "RM-" + n, profile: "Default" })});
+            alert("Sukses!");
+        } catch (e) { alert("Timeout!"); }
+    }
+</script>
+</body>
+</html>
