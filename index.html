@@ -108,7 +108,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const API_BRIDGE = "http://76.13.19.122:3000";
+    const API_BRIDGE = "https://cors-anywhere.herokuapp.com/http://76.13.19.122:3000";
 
     function getMasterPass() { return localStorage.getItem('master_pwd_rm') || 'admin123'; }
     function setMasterPass(pwd) { localStorage.setItem('master_pwd_rm', pwd); }
